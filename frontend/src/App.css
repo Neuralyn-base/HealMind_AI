@@ -1,0 +1,77 @@
+/* Main App styles - minimal as we're using Tailwind */
+.App {
+  min-height: 100vh;
+}
+
+body, .dashboard-liquid-bg {
+  background: linear-gradient(120deg, #e0e7ef 0%, #e7e6f7 40%, #fbe6e7 100%);
+  min-height: 100vh;
+  width: 100vw;
+  overflow-x: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.liquid-card, .glass-sidebar {
+  background: rgba(255,255,255,0.55);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  border-radius: 3rem !important;
+  border: 1px solid rgba(255,255,255,0.2);
+  overflow: hidden;
+  backdrop-filter: blur(28px) saturate(1.5);
+  transition: box-shadow 0.3s, backdrop-filter 0.3s;
+  padding: 2rem;
+}
+
+.glass-box {
+  border-radius: 3rem !important;
+  background: rgba(255,255,255,0.70);
+  box-shadow: 0 2px 12px 0 rgba(80,120,255,0.06) inset, 0 0 0 1.5px rgba(255,255,255,0.10) inset;
+  border: 1px solid rgba(255,255,255,0.18);
+  padding: 1rem 1.25rem;
+  margin: 0.5rem 0;
+}
+.sidebar {
+  background: none;
+}
+/* Remove colored gradients from card backgrounds */
+/* Add extra white space and padding for premium feel */
+.liquid-card > *, .glass-sidebar > * {
+  margin-bottom: 1.25rem;
+}
+.liquid-card > *:last-child, .glass-sidebar > *:last-child {
+  margin-bottom: 0;
+}
+.top-gradient-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 340px;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, #a8edea 0%, #fed6e3 50%, #fcb69f 100%);
+  opacity: 0.8;
+  filter: blur(24px);
+  animation: topGradientMove 12s ease-in-out infinite alternate;
+}
+@keyframes topGradientMove {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+.dashboard-liquid-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.dashboard-liquid-bg svg {
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  filter: blur(32px) saturate(1.2);
+  opacity: 0.85;
+}
