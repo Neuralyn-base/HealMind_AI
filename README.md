@@ -135,7 +135,7 @@ Proprietary. All rights reserved Neuralyn LLC.
 
 ## 🛟 Support
 
-For questions or support, open an issue or email [support@healmind.ai](mailto:support@healmind.ai).
+For questions or support, open an issue or email [support@neuralyn.health](mailto:support@healmind.ai).
 
 ---
 
