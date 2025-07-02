@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Request
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 import os
@@ -10,6 +10,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from external_integrations.ollama_service import OllamaService
 
 # Import our routers
 from routers import chat, voice
@@ -91,6 +92,15 @@ async def get_status_checks():
     with Session(engine) as session:
         status_checks = session.execute("SELECT * FROM status_check").fetchall()
     return [StatusCheck(**status_check) for status_check in status_checks]
+
+@app.post('/api/ollama-chat')
+async def ollama_chat(request: Request):
+    data = await request.json()
+    prompt = data.get('prompt', '')
+    if not prompt:
+        return {"reply": "No prompt provided."}
+    response = await ollama_service.generate_response(prompt=prompt)
+    return {"reply": response.response}
 
 # Include the router in the main app
 app.include_router(api_router)

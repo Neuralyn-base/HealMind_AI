@@ -20,12 +20,9 @@ const WellnessDisclaimer = ({ variant = 'default', className = '' }) => {
     ),
     
     compact: (
-      <div className={`bg-blue-50 border border-blue-200 rounded-lg p-3 ${className}`}>
-        <div className="flex items-center space-x-2">
-          <AlertTriangle className="h-4 w-4 text-blue-600 flex-shrink-0" />
-          <p className="text-xs text-blue-700">
-            <strong>Wellness tool only.</strong> Not medical advice. Seek professional care for mental health concerns.
-          </p>
+      <div className="max-w-2xl mx-auto mt-4 mb-6 px-4">
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-lg px-4 py-2 text-center shadow-sm">
+          <strong>Wellness tool only.</strong> Not medical advice. Seek professional care for mental health concerns.
         </div>
       </div>
     ),

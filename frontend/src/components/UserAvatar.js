@@ -21,7 +21,7 @@ const UserAvatar = ({ user, size = 'md', className = '' }) => {
 
   if (user?.profilePhoto) {
     return (
-      <div className={`relative ${sizeClasses[size]} ${className} ${user?.isPro ? 'ring-4 ring-gradient-pro' : ''}`}>
+      <div className={`relative overflow-hidden ${sizeClasses[size]} ${className} ${user?.isPro ? 'ring-4 ring-gradient-pro' : ''}`}>
         <img
           src={user.profilePhoto}
           alt={user.name || 'User'}

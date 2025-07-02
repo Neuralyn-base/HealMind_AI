@@ -19,6 +19,13 @@ const PREDEFINED_USERS = {
     password: 'Nani@2001',
     isPro: false,
     profilePhoto: null
+  },
+  'nithinrajulapati567@gmail.com': {
+    name: 'Nithin567',
+    email: 'nithinrajulapati567@gmail.com',
+    password: 'Nani@2002',
+    isPro: true,
+    profilePhoto: null
   }
 };
 

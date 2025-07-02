@@ -631,10 +631,13 @@ const ProDashboard = () => {
       } : therapy;
       const session = await chatApi.createSession(mappedTherapy, user.email);
       setCurrentSession({ therapy: mappedTherapy, sessionId: session.session_id });
-    setShowSessionPanel(true);
-    setPopup(null);
-      // Fetch updated sessions from backend
-      fetchSessions();
+      setShowSessionPanel(true);
+      setPopup(null);
+      // Update localStorage and state immediately
+      let sessions = getUserSessions(user);
+      sessions = [{ ...session, user: user.email }, ...sessions];
+      setUserSessions(user, sessions);
+      setAnalyticsSessions(sessions);
     } catch (err) {
       alert('Failed to start session. Please try again.');
     } finally {
@@ -653,8 +656,12 @@ const ProDashboard = () => {
   const handleEndSession = (sessionData) => {
     setShowSessionPanel(false);
     setCurrentSession(null);
-    // Fetch updated sessions from backend
-    fetchSessions();
+    // Update localStorage and state immediately
+    let sessions = getUserSessions(user);
+    // Update the session in the list if needed (e.g., add summary, mark as completed)
+    sessions = sessions.map(s => s.session_id === sessionData.sessionId ? { ...s, ...sessionData, completed: true } : s);
+    setUserSessions(user, sessions);
+    setAnalyticsSessions(sessions);
   };
 
   // Handle logout with animation
@@ -711,16 +718,19 @@ const ProDashboard = () => {
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-primary-700 mb-1">Good {getGreetingTime()}, {user?.name?.split(' ')[0] || 'there'}!</h1>
               <p className="text-neutral-500 text-lg">Here's your wellness snapshot for {today}.</p>
-        </div>
-                </div>
-          <button className="btn-primary mt-2" onClick={()=>setShowMoodCheck(true)}>Check In Mood</button>
             </div>
+          </div>
+          <button className="btn-primary mt-2" onClick={()=>setShowMoodCheck(true)}>Check In Mood</button>
+          <div className="mt-2 text-xs text-neutral-500 italic max-w-xs" style={{lineHeight:1.5}}>
+            This prototype demonstrates our core vision — the complete product is in development and will deliver even greater impact.
+          </div>
+        </div>
         <div className="flex-1 flex flex-col items-end gap-2">
           <div className="bg-white/80 rounded-3xl shadow-xl px-8 py-6 flex flex-col items-center gap-2 glassmorphism-card">
             <span className="text-2xl font-bold text-primary-700">Streak: <span className="text-secondary-500">{getStreak()} days</span></span>
             <span className="text-neutral-500 text-sm">Keep it up! 🎉</span>
           </div>
-                  </div>
+        </div>
       </div>
 
       {/* Wellness Disclaimer */}
@@ -729,13 +739,12 @@ const ProDashboard = () => {
       </div>
       {/* Main Cards Grid */}
       <div className="w-full max-w-6xl mx-auto px-4 z-10 my-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Mood Progress & Streaks */}
+    
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+          {/* Mood Progress Card */}
           <motion.div 
-            className="liquid-card glassmorphism-card overflow-hidden break-words p-8 flex flex-col hover:shadow-2xl transition-all duration-300" 
+            className="liquid-card glassmorphism-card overflow-hidden break-words p-6 flex flex-col hover:shadow-2xl transition-all duration-300 h-[380px] min-h-[340px] max-h-[500px]"
             style={{ 
-              minHeight: '420px',
-              height: '100%',
               background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%)',
               backdropFilter: 'blur(10px)',
               border: '1px solid rgba(255,255,255,0.2)',
@@ -745,17 +754,28 @@ const ProDashboard = () => {
             <div className="w-full flex justify-center items-center mb-4">
               <h2 className="text-xl font-bold text-primary-700 text-center w-full flex justify-center items-center gap-2">Mood Progress <Smile className="h-6 w-6 text-primary-400" /></h2>
             </div>
-            <div className="w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-primary-100 scrollbar-track-primary-50">
-              <MoodChart moodHistory={moodHistory} />
-              <div className="mt-4 text-neutral-500 text-sm max-w-full break-words">Recent moods: {moodHistory.map((m, i) => <span key={i}>{m.value}{i < moodHistory.length-1 ? ', ' : ''}</span>)}</div>
+            <div className="flex-1 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-primary-100 scrollbar-track-primary-50 flex flex-col justify-between">
+              <div>
+                <MoodChart moodHistory={moodHistory} />
+                <div className="mt-4 text-neutral-500 text-sm max-w-full break-words">Recent moods: {moodHistory.map((m, i) => <span key={i}>{m.value}{i < moodHistory.length-1 ? ', ' : ''}</span>)}</div>
+              </div>
+              <div className="mt-4 flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-base font-semibold text-primary-700">
+                  <Smile className="h-5 w-5 text-yellow-400" />
+                  Mood Streak: <span className="text-green-600 font-bold">{getStreak()} days</span>
+                </div>
+                <div className="flex items-center gap-2 text-base font-semibold text-primary-700">
+                  <TrendingUp className="h-5 w-5 text-blue-400" />
+                  Avg. Mood: <span className="text-blue-600 font-bold">{moodHistory.length ? Math.round(moodHistory.reduce((acc, m) => acc + (moodValueMap[m.value] || 70), 0) / moodHistory.length) : '--'}%</span>
+                </div>
+                <div className="mt-2 text-xs text-neutral-500 italic text-center">{getMotivationalQuote()}</div>
+              </div>
             </div>
           </motion.div>
-          {/* AI Insights */}
+          {/* AI Insights Card */}
           <motion.div 
-            className="liquid-card glassmorphism-card overflow-hidden break-words p-8 flex flex-col hover:shadow-2xl transition-all duration-300" 
+            className="liquid-card glassmorphism-card overflow-hidden break-words p-6 flex flex-col hover:shadow-2xl transition-all duration-300 h-[380px] min-h-[340px] max-h-[500px]"
             style={{ 
-              minHeight: '420px',
-              height: '100%',
               background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%)',
               backdropFilter: 'blur(10px)',
               border: '1px solid rgba(255,255,255,0.2)',
@@ -765,25 +785,23 @@ const ProDashboard = () => {
             <div className="w-full flex justify-center items-center mb-4">
               <h2 className="text-xl font-bold text-secondary-700 text-center w-full flex justify-center items-center gap-2">AI Insights <Sparkles className="h-6 w-6 text-secondary-400 animate-bounce" /></h2>
             </div>
-            <div className="w-full flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-secondary-100 scrollbar-track-secondary-50 flex flex-col items-center justify-center" style={{maxHeight: 220, paddingTop: 12}}>
+            <div className="flex-1 w-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-secondary-100 scrollbar-track-secondary-50 flex flex-col items-center justify-center p-4" style={{minHeight: 120, paddingTop: 0, paddingBottom: 0}}>
               {aiInsightLoading ? <div className="text-neutral-400 max-w-full w-full">Loading...</div> : aiInsightError ? <div className="text-red-500 max-w-full w-full">{aiInsightError}</div> :
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="glass-box rounded-[3rem] text-lg text-primary-700 font-semibold mb-2 whitespace-pre-line break-words mt-6 pt-6 mb-6" style={{lineHeight: '1.7'}}>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="glass-box rounded-[3rem] text-lg text-primary-700 font-semibold mb-2 whitespace-pre-line break-words w-full" style={{lineHeight: '1.7', padding: '0 0.5rem', marginTop: 0, marginBottom: 12, minHeight: 60}}>
                   {formatAIInsight(aiInsight)}
                 </motion.div>
               }
               <div className="flex justify-center w-full mb-4">
                 <button className="btn-secondary rounded-full py-4 px-10 mx-8" style={{margin: '0 auto', outline: 'none', border: 'none'}} onClick={()=>setPopup('Analytics')}>
                   View Full Analytics
-                    </button>
-                  </div>
-                </div>
+                </button>
+              </div>
+            </div>
           </motion.div>
-          {/* Session Timeline & Quick Actions */}
+          {/* Session Timeline Card */}
           <motion.div 
-            className="liquid-card glassmorphism-card overflow-hidden break-words p-8 flex flex-col hover:shadow-2xl transition-all duration-300" 
+            className="liquid-card glassmorphism-card overflow-hidden break-words p-6 flex flex-col hover:shadow-2xl transition-all duration-300 h-[380px] min-h-[340px] max-h-[500px]"
             style={{ 
-              minHeight: '420px',
-              height: '100%',
               background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%)',
               backdropFilter: 'blur(10px)',
               border: '1px solid rgba(255,255,255,0.2)',
@@ -793,10 +811,10 @@ const ProDashboard = () => {
             <div className="w-full flex justify-center items-center mb-4">
               <h2 className="text-xl font-bold text-primary-700 text-center w-full flex justify-center items-center gap-2">Session Timeline <MessageCircle className="h-6 w-6 text-primary-400" /></h2>
             </div>
-            <div className="w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-primary-100 scrollbar-track-primary-50">
+            <div className="flex-1 w-full overflow-y-auto custom-scrollbar-inside rounded-2xl p-4" style={{background: 'rgba(255,255,255,0.96)'}}>
               <SessionTimeline sessions={sessionHistory} />
-          </div>
-            <button className="btn-primary mt-4 max-w-full w-full" onClick={()=>setPopup('Sessions')}>Start New Session</button>
+            </div>
+            <button className="btn-primary mt-auto max-w-full w-full" onClick={()=>setPopup('Sessions')}>Start New Session</button>
           </motion.div>
                 </div>
       </div>
@@ -880,14 +898,6 @@ const ProDashboard = () => {
   function getMotivationalQuote() {
     // Example: rotate quotes
     return tips[Math.floor(Math.random() * tips.length)];
-  }
-  function getMiniAnalytics() {
-    // Example: return mini stats
-    return [
-      { label: 'Sessions this month', value: 12 },
-      { label: 'Avg. session', value: '22 min' },
-      { label: 'Most used therapy', value: 'CBT' },
-    ];
   }
   function getWellnessCards() {
     // Example: return carousel cards
@@ -1266,12 +1276,15 @@ const ProDashboard = () => {
             <div className="h-full w-full overflow-y-auto custom-scrollbar p-8 pt-24 pb-8 md:pb-12">
               <h2 className="text-3xl font-bold text-center text-primary-700 mb-2">Your Mental Health Analytics</h2>
               <p className="text-center text-neutral-600 mb-8">AI-powered insights into your wellness journey</p>
+              <div className="mb-4 p-3 rounded-xl bg-blue-50 text-blue-700 text-sm font-medium text-center border border-blue-100 shadow-sm">
+                This is a demo visualization page and will automatically update once your session is completed.
+              </div>
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 overflow-x-hidden">
                 {/* Left Column */}
                 <div className="space-y-6 col-span-1">
                   {/* Emotional Triggers & Patterns (real data) */}
                   <AnalyticsCard title="🧠 Emotional Triggers & Patterns">
-                    <div className="flex flex-col gap-3 max-h-56 overflow-y-auto">
+                    <div className="flex flex-col gap-3 max-h-56 overflow-y-auto custom-scrollbar-inside rounded-2xl p-1" style={{background: 'rgba(255,255,255,0.85)'}}>
                       {extractEmotionalTriggers(analyticsSessions, moodHistory).length === 0 ? (
                         <div className="text-neutral-400">No triggers detected yet</div>
                       ) : extractEmotionalTriggers(analyticsSessions, moodHistory).map((t, i) => (
@@ -1640,45 +1653,119 @@ const ProDashboard = () => {
     return null;
   };
 
-  // Fetch analytics and AI insights on mount or when sessionHistory changes
+  // --- USER-SPECIFIC DATA HELPERS ---
+  function getUserSessions(user) {
+    if (!user?.email) return [];
+    return JSON.parse(localStorage.getItem(`sessions_${user.email}`) || '[]');
+  }
+  function setUserSessions(user, sessions) {
+    if (!user?.email) return;
+    localStorage.setItem(`sessions_${user.email}`, JSON.stringify(sessions));
+  }
+  function getUserCopilotSummaries(user) {
+    if (!user?.email) return [];
+    return JSON.parse(localStorage.getItem(`copilot_${user.email}`) || '[]');
+  }
+  function setUserCopilotSummaries(user, summaries) {
+    if (!user?.email) return;
+    localStorage.setItem(`copilot_${user.email}`, JSON.stringify(summaries));
+  }
+  function getUserAIInsight(user) {
+    if (!user?.email) return '';
+    return localStorage.getItem(`aiInsight_${user.email}`) || '';
+  }
+  function setUserAIInsight(user, insight) {
+    if (!user?.email) return;
+    localStorage.setItem(`aiInsight_${user.email}`, insight);
+  }
+  function getUserAnalytics(user) {
+    if (!user?.email) return null;
+    return JSON.parse(localStorage.getItem(`analytics_${user.email}`) || 'null');
+  }
+  function setUserAnalytics(user, analytics) {
+    if (!user?.email) return;
+    localStorage.setItem(`analytics_${user.email}`, JSON.stringify(analytics));
+  }
+  // --- FETCHERS (USER-SPECIFIC, FULLY REACTIVE) ---
   useEffect(() => {
-    const fetchAnalytics = async () => {
-      setAnalyticsLoading(true);
-      setAnalyticsError(null);
-      try {
-        // Example: get all sessions and compute stats
-        const sessions = await chatApi.getAllSessions();
-        const sessionCount = sessions.length;
-        const avgSession = sessionCount > 0 ? Math.round(sessions.reduce((acc, s) => acc + (s.duration || 20), 0) / sessionCount) : 0;
-        const mostUsedTherapy = (() => {
-          const counts = {};
-          sessions.forEach(s => {
-            const t = typeof s.therapy === 'string' ? s.therapy : (s.therapy?.name || s.therapy?.title || 'Session');
-            counts[t] = (counts[t] || 0) + 1;
-          });
-          return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Session';
-        })();
-        setAnalytics({
-          sessionCount,
-          avgSession,
-          mostUsedTherapy
+    if (!user?.email) return;
+    // Always reload sessions from user-specific storage
+    let sessions = getUserSessions(user);
+    setAnalyticsSessions(sessions);
+  }, [user]);
+
+  // Recalculate analytics preview, session frequency, goals, milestones on user or session change
+  useEffect(() => {
+    if (!user?.email) return;
+    const sessions = getUserSessions(user);
+    // Session Frequency calculations
+    const now = new Date();
+    const thisMonth = sessions.filter(s => {
+      if (!s.created_at) return false;
+      const d = new Date(s.created_at);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+    const thisWeek = sessions.filter(s => {
+      if (!s.created_at) return false;
+      const d = new Date(s.created_at);
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      return d >= startOfWeek && d <= now;
+    });
+    const lastWeek = sessions.filter(s => {
+      if (!s.created_at) return false;
+      const d = new Date(s.created_at);
+      const startOfThisWeek = new Date(now);
+      startOfThisWeek.setDate(now.getDate() - now.getDay());
+      const startOfLastWeek = new Date(startOfThisWeek);
+      startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+      return d >= startOfLastWeek && d < startOfThisWeek;
+    });
+    const avgSession = sessions.length ? Math.round(sessions.reduce((acc, s) => acc + (s.duration || 20), 0) / sessions.length) : 0;
+    const completionRate = sessions.length ? Math.round((sessions.filter(s => s.completed).length / sessions.length) * 100) : 0;
+    // Goals & Milestones
+    const weeklyTarget = 4;
+    const weeklyCompleted = thisWeek.length;
+    const moodImprovement = 0; // Placeholder, can be calculated from moodHistory
+    setAnalytics({
+      sessionCount: thisMonth.length,
+      avgSession,
+      mostUsedTherapy: (() => {
+        const counts = {};
+        sessions.forEach(s => {
+          const t = typeof s.therapy === 'string' ? s.therapy : (s.therapy?.name || s.therapy?.title || 'Session');
+          counts[t] = (counts[t] || 0) + 1;
         });
-      } catch (err) {
-        setAnalyticsError('Failed to load analytics');
-      } finally {
-        setAnalyticsLoading(false);
-      }
-    };
-    const fetchAIInsight = async () => {
+        return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Session';
+      })(),
+      thisWeek: thisWeek.length,
+      lastWeek: lastWeek.length,
+      completionRate,
+      weeklyTarget,
+      weeklyCompleted,
+      moodImprovement
+    });
+  }, [user, analyticsSessions]);
+
+  // AI Insights: update whenever user or analyticsSessions change
+  useEffect(() => {
+    if (!user?.email) return;
+    async function fetchAIInsight() {
       setAIInsightLoading(true);
       setAIInsightError(null);
       try {
-        // Example: get copilot summary for the latest session
-        const sessions = await chatApi.getAllSessions();
+        let sessions = getUserSessions(user);
+        if (!sessions.length) {
+          sessions = await chatApi.getAllSessions();
+          sessions = sessions.filter(s => s.user === user.email);
+          setUserSessions(user, sessions);
+        }
         if (sessions.length > 0) {
           const summary = await chatApi.getCopilotSummary(sessions[0].session_id);
+          setUserAIInsight(user, summary.summary || 'No insights yet.');
           setAIInsight(summary.summary || 'No insights yet.');
         } else {
+          setUserAIInsight(user, 'No sessions yet. Start a session to get insights!');
           setAIInsight('No sessions yet. Start a session to get insights!');
         }
       } catch (err) {
@@ -1686,10 +1773,9 @@ const ProDashboard = () => {
       } finally {
         setAIInsightLoading(false);
       }
-    };
-    fetchAnalytics();
+    }
     fetchAIInsight();
-  }, [sessionHistory]);
+  }, [user, analyticsSessions]);
 
   // In AI Insights, post-process summary for beauty and clarity
   function formatAIInsight(text) {
@@ -1718,7 +1804,9 @@ const ProDashboard = () => {
       setAnalyticsError(null);
       try {
         const sessions = await chatApi.getAllSessions();
-        setAnalyticsSessions(sessions);
+        // Only include sessions for the current user
+        const filtered = user?.email ? sessions.filter(s => s.user === user.email || s.user_id === user.email) : sessions;
+        setAnalyticsSessions(filtered);
       } catch (err) {
         setAnalyticsError('Failed to load analytics data.');
       } finally {
@@ -1866,6 +1954,20 @@ const ProDashboard = () => {
   const [showSupportChat, setShowSupportChat] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
 
+  // Ensure sessionHistory is always in sync with user and analyticsSessions
+  useEffect(() => {
+    if (!user?.email) return;
+    setSessionHistory(getUserSessions(user));
+  }, [user, analyticsSessions]);
+
+  // Clear analytics and analyticsSessions when user logs out or changes to a user with no data
+  useEffect(() => {
+    if (!user?.email) {
+      setAnalytics(null);
+      setAnalyticsSessions([]);
+    }
+  }, [user]);
+
   return (
     <motion.div 
       className="min-h-screen bg-gradient-to-br from-neutral-50 to-primary-50"
@@ -1918,7 +2020,7 @@ const ProDashboard = () => {
       <div className="pt-16 flex w-full min-h-screen">
         {/* Sidebar: always visible on md+, toggle on mobile */}
         <AnimatePresence>
-          {(sidebarOpen || isDesktop) && (
+          {(!showSessionPanel || !currentSession) && (sidebarOpen || isDesktop) && (
             <motion.aside
               initial={{ x: -60, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
