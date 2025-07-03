@@ -1,3 +1,4 @@
+## Flagship application from Neuralyn...
 
 - **Frontend:** React, Tailwind CSS, Framer Motion, Lucide icons, Axios.
 - **Backend:** FastAPI, SQLAlchemy ORM, Alembic migrations, Pydantic, httpx.
